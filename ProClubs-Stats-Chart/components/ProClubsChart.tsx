@@ -11,13 +11,20 @@ interface PlayerStats {
   points: number
 }
 
-type NumericKeys = 'gamesPlayed' | 'goals' | 'assists' | 'points'
+// Explicitly define which keys can be sorted
+const SORTABLE_KEYS = ['gamesPlayed', 'goals', 'assists', 'points'] as const
+type SortableKey = typeof SORTABLE_KEYS[number]
+
+// Type guard to check if a key is sortable
+function isSortableKey(key: string): key is SortableKey {
+  return SORTABLE_KEYS.includes(key as SortableKey)
+}
 
 export default function ProClubsChart() {
   const [data, setData] = useState<PlayerStats[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [sortKey, setSortKey] = useState<NumericKeys>('points')
+  const [sortKey, setSortKey] = useState<SortableKey>('points')
 
   useEffect(() => {
     async function fetchData() {
@@ -32,7 +39,6 @@ export default function ProClubsChart() {
           throw new Error(result.error)
         }
 
-        // Transform the API data with explicit number conversions
         const transformedData: PlayerStats[] = (result.members || []).map((member: any) => ({
           name: String(member.name || 'Unknown'),
           gamesPlayed: Number(member.gamesPlayed || 0),
@@ -85,16 +91,22 @@ export default function ProClubsChart() {
     )
   }
 
+  // Type-safe sort function
   const sortedData = [...data].sort((a, b) => {
-    return Number(b[sortKey]) - Number(a[sortKey])
+    if (isSortableKey(sortKey)) {
+      const valueA = a[sortKey]
+      const valueB = b[sortKey]
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return valueB - valueA
+      }
+    }
+    return 0
   })
 
-  const sortButtons: Array<{ key: NumericKeys; label: string }> = [
-    { key: 'gamesPlayed', label: 'Games Played' },
-    { key: 'goals', label: 'Goals' },
-    { key: 'assists', label: 'Assists' },
-    { key: 'points', label: 'Points' }
-  ]
+  const sortButtons = SORTABLE_KEYS.map(key => ({
+    key,
+    label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+  }))
 
   return (
     <div className="w-full bg-white rounded-lg shadow-lg p-6">
