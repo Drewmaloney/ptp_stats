@@ -71,7 +71,7 @@ export default function ProClubsChart() {
     )
   }
 
-  const sortedData = [...data].sort((a, b) => b[sortKey] - a[sortKey])
+  const sortedData = [...data].sort((a, b) => (b[sortKey] as number) - (a[sortKey] as number))
 
   const sortButtons: { key: keyof PlayerStats; label: string }[] = [
     { key: 'gamesPlayed', label: 'Games Played' },
